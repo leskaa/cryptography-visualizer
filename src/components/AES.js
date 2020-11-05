@@ -4,7 +4,7 @@ import { Typography } from 'antd';
 const { Title } = Typography;
 
 const AES = () => {
-  return <Title>AES</Title>;
+  return <Title>Advanced Encryption Standard</Title>;
 };
 
 export default AES;
