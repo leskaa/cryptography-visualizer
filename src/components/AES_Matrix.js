@@ -48,9 +48,10 @@ class AES_Matrix extends Component {
   ];
 
   render() {
+    // prettier-ignore
     return (
-      <div>
-        <Table dataSource={this.dataSource} columns={this.columns} />
+      <div class="matrix">
+        <Table class="mytable" dataSource={this.dataSource} columns={this.columns} pagination={{total: 4, pageSize: 4, hideOnSinglePage: true}}/>
       </div>
     );
   }
