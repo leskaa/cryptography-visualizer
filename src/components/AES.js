@@ -1,6 +1,9 @@
 import React, { Component } from 'react';
+import { Input, Select, Button } from 'antd';
 
 import AES_MATRIX from './AES_Matrix';
+
+const { Option } = Select;
 
 /*
  * aes-js - https://developer.aliyun.com/mirror/npm/package/aes-js/v/3.0.0
@@ -283,13 +286,13 @@ class AES extends Component {
   }
 
   run = () => {
-    var cipherText = this.encrypt(this.input.current.value);
+    var cipherText = this.encrypt(this.input.state.value);
     this.setState({
       key_128: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
       key_length: this.state.key_length,
       rounds: this.state.rounds,
       page: this.state.page,
-      input: this.input.current.value,
+      input: this.input.state.value,
       cipherText: cipherText,
       view: true
     });
@@ -304,7 +307,7 @@ class AES extends Component {
       key_length: this.state.key_length,
       rounds: this.state.rounds,
       page: this.state.page + 1,
-      input: this.input.current.value,
+      input: this.input.state.value,
       cipherText: this.state.cipherText,
       view: true
     });
@@ -332,7 +335,7 @@ class AES extends Component {
           <div class="row justify-content-md-center">
             <label for="plainText" class="col-form-label">Plain Text:</label>
             <div class="col-sm-8">
-              <input id="plainText" class="form-control" type="text" ref={this.input} />
+            <Input id="plainText" type="text" ref={i => this.input = i} />
             </div>
             <label for="keySize" class="col-form-label">Key Size:</label>
             <div class="col-sm-1">
@@ -348,12 +351,12 @@ class AES extends Component {
                 </option>
               </select>
             </div>
-            <button class="btn btn-outline-dark" onClick={this.run}>Encrypt!</button>
+            <Button onClick={this.run}>Encrypt</Button>
           </div>
           <div class="row justify-content-md-center">
             <label for="cipherText" class="col-form-label">Cipher Text:</label>
             <div class="col-sm-4">
-              <input type="text" readonly class="form-control" id="cipherText" value={cipherText}></input>
+              <Input id="cipherText" type="text" readonly value={cipherText} />
             </div>
           </div>
           <hr />
@@ -390,8 +393,8 @@ class AES extends Component {
           <p>
             The following combination of functions is performed for {rounds} rounds.
           </p>
-          <button class="btn btn-outline-dark" onClick={this.handleClick}>Previous Page</button>
-          <button class="btn btn-outline-dark" onClick={this.handleClick}>Next Page</button>
+          <Button onClick={this.handleClick}>Previous Page</Button>
+          <Button onClick={this.handleClick}>Next Page</Button>
           <hr />
           <div class="row">
             <div class="col">
@@ -443,8 +446,8 @@ class AES extends Component {
             <div class="col">{roundKeyMatrix2}</div>
           </div>
           <hr />
-        <button class="btn btn-outline-dark" onClick={this.handleClick}>Previous Page</button>
-        <button class="btn btn-outline-dark" onClick={this.handleClick}>Next Page</button>
+        <Button onClick={this.handleClick}>Previous Page</Button>
+        <Button onClick={this.handleClick}>Next Page</Button>
           <hr />
         <div class="row justify-content-md-center">
             <label for="cipherText" class="col-form-label">Cipher Text:</label>
@@ -469,24 +472,21 @@ class AES extends Component {
           </div>
           <div class="row justify-content-md-center">
             <label for="plainText" class="col-form-label">Plain Text:</label>
-            <div class="col-sm-8">
-              <input id="plainText" class="form-control" type="text" ref={this.input} />
+            <div class="col-sm-8"> 
+              <Input id="plainText" type="text" ref={i => this.input = i} />
             </div>
             <label for="keySize" class="col-form-label">Key Size:</label>
             <div class="col-sm-1">
-              <select id="keySize" class="form-control" onChange={this.handleChange}>
-                <option key="128" value="128">
-                  128
-                </option>
-                <option key="192" value="192">
-                  192
-                </option>
-                <option key="256" value="256">
-                  256
-                </option>
-              </select>
+              <Select
+                id="keySize"
+                placeholder="key"
+              >
+                <Option value="128">128</Option>
+                <Option value="192">192</Option>
+                <Option value="256">256</Option>
+              </Select>
             </div>
-            <button class="btn btn-outline-dark" onClick={this.run}>Encrypt!</button>
+            <Button onClick={this.run}>Encrypt</Button>
           </div>
         </div>
       )
