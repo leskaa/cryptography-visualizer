@@ -35,8 +35,10 @@ class AES extends Component {
       this.roundKeyMatrix2[x] = <p>todo</p>;
     }
     this.input = React.createRef();
+    this.key = React.createRef();
+    this.key_size = 128;
     this.handleChange = this.handleChange.bind(this);
-    this.handleClick = this.handleClick.bind(this);
+    // this.handleClick = this.handleClick.bind(this);
     /* I've been having one hell of a time getting the syntax on this working...
        this prettier/prettier dependency thing is a complete peice of shit. 
        Anyway found this here: https://www.movable-type.co.uk/scripts/aes.html */
@@ -60,23 +62,24 @@ class AES extends Component {
       0x8c, 0xa1, 0x89, 0x0d, 0xbf, 0xe6, 0x42, 0x68, 0x41, 0x99, 0x2d, 0x0f, 0xb0, 0x54, 0xbb, 0x16,
     ];
     // prettier-ignore
-    this.exampleMatrix = [ ['b0', 'b4', 'b8', 'b12'], ['b1', 'b5', 'b9', 'b13'], ['b2', 'b6', 'b10', 'b14'], ['b3', 'b7', 'b11', 'b15']]
+    this.exampleMatrix = this.displayMatrix([ ['b0', 'b4', 'b8', 'b12'], ['b1', 'b5', 'b9', 'b13'], ['b2', 'b6', 'b10', 'b14'], ['b3', 'b7', 'b11', 'b15']])
   }
 
-  encrypt(input) {
+  encrypt(input, key, key_size) {
     console.log('The user inputed the following text to encrpt: ' + input);
 
-    this.exampleMatrix = this.displayMatrix(this.exampleMatrix);
-    for (var i = 0; i < input.length; i += 16) {
+    var n = key_size / 8;
+
+    // this outer for loop is for future implementations with no length limit on plain text
+    for (var i = 0; i < input.length; i += n) {
       var textBytes = [];
-      for (var j = 0; j < 16; j++) {
-        if (!isNaN(input.charCodeAt(i + j))) {
-          textBytes.push(input.charCodeAt(i + j));
-        } else {
-          textBytes.push(0);
-        }
+      var keyBytes = [];
+      for (var j = 0; j < n; j++) {
+        textBytes.push(j < input.length ? input.charCodeAt(i + j) : 0);
+        keyBytes.push(i < key.length ? key.charCodeAt(i + j) : 0);
       }
-      var key = this.keyExpansion(textBytes);
+
+      // var key = this.keyExpansion(textBytes);
       var aesMatrix = this.createMatrix(textBytes);
       this.initialMatrix = this.displayMatrix(aesMatrix);
 
@@ -112,7 +115,6 @@ class AES extends Component {
       var cipherText = '';
       for (let i = 0; i < 4; i++) {
         for (let j = 0; j < 4; j++) {
-          console.log(String.fromCharCode(aesMatrix[i][j]));
           cipherText = cipherText + String.fromCharCode(aesMatrix[i][j]);
         }
       }
@@ -131,7 +133,7 @@ class AES extends Component {
       let temp = new Array(4);
       for (let j = 0; j < 4; j++) {
         temp[j] = key_list[i - 1][j];
-        if (i % this.state.rounds == 0) {
+        if (i % this.state.rounds === 0) {
           const tmp = temp[0];
           for (let x = 0; x < 3; x++) {
             temp[x] = temp[x + 1];
@@ -140,7 +142,7 @@ class AES extends Component {
           for (let x = 0; x < 4; x++) {
             temp[x] = this.sBox[temp[x]];
           }
-        } else if (this.state.rounds > 4 && i % this.state.rounds == 4) {
+        } else if (this.state.rounds > 4 && i % this.state.rounds === 4) {
           for (let x = 0; x < 4; x++) {
             temp[i] = this.sBox[temp[i]];
           }
@@ -154,7 +156,6 @@ class AES extends Component {
   }
 
   createMatrix(bytes) {
-    /* This is such a hack job but I guess it will do. */
     var matrix = [[], [], [], []];
     matrix[0][0] = bytes[0];
     matrix[0][1] = bytes[1];
@@ -194,7 +195,6 @@ class AES extends Component {
   }
 
   shiftRows(matrix) {
-    /* This is also a hack job... */
     //Row 2
     var temp1 = matrix[1][0];
     matrix[1][0] = matrix[1][1];
@@ -235,26 +235,6 @@ class AES extends Component {
     return matrix;
   }
 
-  vectorMultiplication(matrix, vector) {
-    var column = [];
-    for (var i = 0; i < 4; i++) {
-      var val = 0;
-      for (var j = 0; j < 4; j++) {
-        val += matrix[i][j] * vector[j];
-      }
-      column[i] = val;
-    }
-    return column;
-  }
-
-  shiftColumns(byteMatrix) {
-    var newMatrix = [];
-    for (var i = 0; i < 4; i++) {
-      newMatrix[i] = this.vectorMultiplication(byteMatrix, byteMatrix[i]);
-    }
-    return newMatrix;
-  }
-
   displayMatrix(matrix) {
     var renderObject = {
       col1: [matrix[0][0], matrix[1][0], matrix[2][0], matrix[3][0]],
@@ -286,7 +266,8 @@ class AES extends Component {
   }
 
   run = () => {
-    var cipherText = this.encrypt(this.input.state.value);
+    // prettier-ignore
+    var cipherText = this.encrypt(this.input.state.value, this.key.state.value, this.key_size);
     this.setState({
       key_128: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
       key_length: this.state.key_length,
@@ -298,7 +279,7 @@ class AES extends Component {
     });
   };
 
-  handleClick() {
+  nextPage = () => {
     //todo: this is not actually working even though it is updating the matrix objects.
     console.log('The user is navigating to the next page');
     // prettier-ignore
@@ -311,16 +292,71 @@ class AES extends Component {
       cipherText: this.state.cipherText,
       view: true
     });
-  }
+  };
+
+  previousPage = () => {
+    //todo: this is not actually working even though it is updating the matrix objects.
+    console.log('The user is navigating to the pervious page');
+    // prettier-ignore
+    this.setState({
+      key_128: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+      key_length: this.state.key_length,
+      rounds: this.state.rounds,
+      page: this.state.page - 1,
+      input: this.input.state.value,
+      cipherText: this.state.cipherText,
+      view: true
+    });
+  };
 
   render() {
     let page = this.state.page;
     let initialMatrix = this.initialMatrix;
     let roundKeyMatrix1 = this.roundKeyMatrix1;
-    let substituteBytesMatrix = this.substituteBytesMatrix[page];
-    let shiftRowsMatrix = this.shiftRowsMatrix[page];
-    let mixColumnsMatrix = this.mixColumnsMatrix[page];
-    let roundKeyMatrix2 = this.roundKeyMatrix2[page];
+    /* This is the absolute stupidest shit I've ever had to do.
+       For some reason react was not updating the components if
+       I assigned a new value to the same variable. Like the
+       variable would update, but not the component itself.  */
+    let substituteBytesMatrix0 = this.substituteBytesMatrix[0];
+    let substituteBytesMatrix1 = this.substituteBytesMatrix[1];
+    let substituteBytesMatrix2 = this.substituteBytesMatrix[2];
+    let substituteBytesMatrix3 = this.substituteBytesMatrix[3];
+    let substituteBytesMatrix4 = this.substituteBytesMatrix[4];
+    let substituteBytesMatrix5 = this.substituteBytesMatrix[5];
+    let substituteBytesMatrix6 = this.substituteBytesMatrix[6];
+    let substituteBytesMatrix7 = this.substituteBytesMatrix[7];
+    let substituteBytesMatrix8 = this.substituteBytesMatrix[8];
+    let substituteBytesMatrix9 = this.substituteBytesMatrix[9];
+    let shiftRowsMatrix0 = this.shiftRowsMatrix[0];
+    let shiftRowsMatrix1 = this.shiftRowsMatrix[1];
+    let shiftRowsMatrix2 = this.shiftRowsMatrix[2];
+    let shiftRowsMatrix3 = this.shiftRowsMatrix[3];
+    let shiftRowsMatrix4 = this.shiftRowsMatrix[4];
+    let shiftRowsMatrix5 = this.shiftRowsMatrix[5];
+    let shiftRowsMatrix6 = this.shiftRowsMatrix[6];
+    let shiftRowsMatrix7 = this.shiftRowsMatrix[7];
+    let shiftRowsMatrix8 = this.shiftRowsMatrix[8];
+    let shiftRowsMatrix9 = this.shiftRowsMatrix[9];
+    let mixColumnsMatrix0 = this.mixColumnsMatrix[0];
+    let mixColumnsMatrix1 = this.mixColumnsMatrix[1];
+    let mixColumnsMatrix2 = this.mixColumnsMatrix[2];
+    let mixColumnsMatrix3 = this.mixColumnsMatrix[3];
+    let mixColumnsMatrix4 = this.mixColumnsMatrix[4];
+    let mixColumnsMatrix5 = this.mixColumnsMatrix[5];
+    let mixColumnsMatrix6 = this.mixColumnsMatrix[6];
+    let mixColumnsMatrix7 = this.mixColumnsMatrix[7];
+    let mixColumnsMatrix8 = this.mixColumnsMatrix[8];
+    let mixColumnsMatrix9 = this.mixColumnsMatrix[9];
+    let roundKeyMatrix2_0 = this.roundKeyMatrix2[0];
+    let roundKeyMatrix2_1 = this.roundKeyMatrix2[1];
+    let roundKeyMatrix2_2 = this.roundKeyMatrix2[2];
+    let roundKeyMatrix2_3 = this.roundKeyMatrix2[3];
+    let roundKeyMatrix2_4 = this.roundKeyMatrix2[4];
+    let roundKeyMatrix2_5 = this.roundKeyMatrix2[5];
+    let roundKeyMatrix2_6 = this.roundKeyMatrix2[6];
+    let roundKeyMatrix2_7 = this.roundKeyMatrix2[7];
+    let roundKeyMatrix2_8 = this.roundKeyMatrix2[8];
+    let roundKeyMatrix2_9 = this.roundKeyMatrix2[9];
     let cipherText = this.state.cipherText;
     let view = this.state.view;
     let exampleMatrix = this.exampleMatrix;
@@ -330,41 +366,40 @@ class AES extends Component {
       return (
         <div className="AES" align="center">
           <div>
-            <h1 class="aesH1">AES - Advanced Encryption Standard</h1>
+            <h1 className="aesH1">AES - Advanced Encryption Standard</h1>
           </div>
-          <div class="row justify-content-md-center">
-            <label for="plainText" class="col-form-label">Plain Text:</label>
-            <div class="col-sm-8">
-            <Input id="plainText" type="text" ref={i => this.input = i} />
+          <div className="row justify-content-md-center">
+            <label htmlFor="plainText" className="col-form-label">Plain Text:</label>
+            <div className="col-sm-4"> 
+              <Input id="plainText" maxLength="16" type="text" ref={i => this.input = i} defaultValue="" />
             </div>
-            <label for="keySize" class="col-form-label">Key Size:</label>
-            <div class="col-sm-1">
-              <select id="keySize" class="form-control" onChange={this.handleChange}>
-                <option key="128" value="128">
-                  128
-                </option>
-                <option key="192" value="192">
-                  192
-                </option>
-                <option key="256" value="256">
-                  256
-                </option>
-              </select>
+            <label htmlFor="key" className="col-form-label">Key:</label>
+            <div className="col-sm-4"> 
+              <Input id="key" type="text" ref={k => this.key = k} defaultValue="" />
             </div>
-            <Button onClick={this.run}>Encrypt</Button>
+            <div className="col-sm-1">
+              <Select id="keySize" defaultValue="128" ref={ks => this.key_size = ks}>
+                <Option value={128}>128</Option>
+                <Option value={192} disabled>192</Option>
+                <Option value={256} disabled>256</Option>
+              </Select>
+            </div>
+            <div className="col-sm-2">
+              <Button onClick={this.run}>Encrypt</Button>
+            </div>
           </div>
-          <div class="row justify-content-md-center">
-            <label for="cipherText" class="col-form-label">Cipher Text:</label>
-            <div class="col-sm-4">
-              <Input id="cipherText" type="text" readonly value={cipherText} />
+          <div className="row justify-content-md-center">
+            <label htmlFor="cipherTextTop" className="col-form-label">Cipher Text:</label>
+            <div className="col-sm-4">
+              <Input id="cipherTextTop" type="text" readonly value={cipherText} />
             </div>
           </div>
           <hr />
           <div>
             <h1>Step By Step Process:</h1>
           </div>
-          <div class="row">
-            <div class="col">
+          <div className="row">
+            <div className="col">
               <h2>Inital Matrix</h2>
               {exampleMatrix}
               <p>
@@ -374,11 +409,11 @@ class AES extends Component {
                 to UTF-8 encoding, we can see our initial matrix on our right.
               </p>
             </div>
-            <div class="col">{initialMatrix}</div>
+            <div className="col">{initialMatrix}</div>
           </div>
           <hr />
-          <div class="row">
-            <div class="col">
+          <div className="row">
+            <div className="col">
               <h2>Add Round Key</h2>
               <p>
                 The first step is to add a round key. This means performing an XOR operation on 
@@ -387,28 +422,39 @@ class AES extends Component {
                 they are different the bit will become a 1.
               </p>
             </div>
-            <div class="col">{roundKeyMatrix1}</div>
+            <div className="col">{roundKeyMatrix1}</div>
           </div>
           <hr />
           <p>
             The following combination of functions is performed for {rounds} rounds.
           </p>
-          <Button onClick={this.handleClick}>Previous Page</Button>
-          <Button onClick={this.handleClick}>Next Page</Button>
+          <Button onClick={this.previousPage}>Previous Page</Button>
+          <Button onClick={this.nextPage}>Next Page</Button>
           <hr />
-          <div class="row">
-            <div class="col">
+          <div className="row">
+            <div className="col">
               <h2>Substitute Bytes</h2>
               <p>
                 In this step each byte is substituted with a corresponding byte found in a table known
                 as the <a href="https://en.wikipedia.org/wiki/Rijndael_S-box">S-BOX</a>.
               </p>
             </div>
-            <div class="col">{substituteBytesMatrix}</div>
+            <div className="col">
+              {page === 0 && substituteBytesMatrix0}
+              {page === 1 && substituteBytesMatrix1}
+              {page === 2 && substituteBytesMatrix2}
+              {page === 3 && substituteBytesMatrix3}
+              {page === 4 && substituteBytesMatrix4}
+              {page === 5 && substituteBytesMatrix5}
+              {page === 6 && substituteBytesMatrix6}
+              {page === 7 && substituteBytesMatrix7}
+              {page === 8 && substituteBytesMatrix8}
+              {page === 9 && substituteBytesMatrix9}                                
+            </div>
           </div>
           <hr />
-          <div class="row">
-            <div class="col">
+          <div className="row">
+            <div className="col">
               <h2>Shift Rows</h2>
               <p>
                 The rows are shifted following these rules:
@@ -420,11 +466,22 @@ class AES extends Component {
                 <li>In row 4 each cell is shifted to the left three steps. (One step to the right)</li>
               </ul>
             </div>
-            <div class="col">{shiftRowsMatrix}</div>
+            <div className="col">
+              {page === 0 && shiftRowsMatrix0}
+              {page === 1 && shiftRowsMatrix1}
+              {page === 2 && shiftRowsMatrix2}
+              {page === 3 && shiftRowsMatrix3}
+              {page === 4 && shiftRowsMatrix4}
+              {page === 5 && shiftRowsMatrix5}
+              {page === 6 && shiftRowsMatrix6}
+              {page === 7 && shiftRowsMatrix7}
+              {page === 8 && shiftRowsMatrix8}
+              {page === 9 && shiftRowsMatrix9}
+            </div>
           </div>
           <hr />
-          <div class="row">
-            <div class="col">
+          <div className="row">
+            <div className="col">
               <h2>Mix Columns</h2>
               <p>
                 In this step matrix-vector multiplication is performed. This is done by taking one column
@@ -432,31 +489,53 @@ class AES extends Component {
                 MD5 matrix</a>. This step is not performed on the last round.
               </p>
             </div>
-            <div class="col">{mixColumnsMatrix}</div>
+            <div className="col">
+              {page === 0 && mixColumnsMatrix0}
+              {page === 1 && mixColumnsMatrix1}
+              {page === 2 && mixColumnsMatrix2}
+              {page === 3 && mixColumnsMatrix3}
+              {page === 4 && mixColumnsMatrix4}
+              {page === 5 && mixColumnsMatrix5}
+              {page === 6 && mixColumnsMatrix6}
+              {page === 7 && mixColumnsMatrix7}
+              {page === 8 && mixColumnsMatrix8}
+              {page === 9 && mixColumnsMatrix9}
+            </div>
           </div>
           <hr />
-          <div class="row">
-            <div class="col">
+          <div className="row">
+            <div className="col">
               <h2>Add Round Key</h2>
               <p>
                 Similar to the first step a round key is added, but this time a subkey is used instead of
                 the private key.
               </p>
             </div>
-            <div class="col">{roundKeyMatrix2}</div>
-          </div>
-          <hr />
-        <Button onClick={this.handleClick}>Previous Page</Button>
-        <Button onClick={this.handleClick}>Next Page</Button>
-          <hr />
-        <div class="row justify-content-md-center">
-            <label for="cipherText" class="col-form-label">Cipher Text:</label>
-            <div class="col-sm-4">
-              <input type="text" readonly class="form-control" id="cipherText" value={cipherText}></input>
+            <div className="col">
+              {page === 0 && roundKeyMatrix2_0}
+              {page === 1 && roundKeyMatrix2_1}
+              {page === 2 && roundKeyMatrix2_2}
+              {page === 3 && roundKeyMatrix2_3}
+              {page === 4 && roundKeyMatrix2_4}
+              {page === 5 && roundKeyMatrix2_5}
+              {page === 6 && roundKeyMatrix2_6}
+              {page === 7 && roundKeyMatrix2_7}
+              {page === 8 && roundKeyMatrix2_8}
+              {page === 9 && roundKeyMatrix2_9}
             </div>
           </div>
           <hr />
-          <div class="row justify-content-md-center">
+        <Button onClick={this.previousPage}>Previous Page</Button>
+        <Button onClick={this.nextPage}>Next Page</Button>
+          <hr />
+        <div className="row justify-content-md-center">
+            <label htmlFor="cipherTextBottom" className="col-form-label">Cipher Text:</label>
+            <div className="col-sm-4">
+              <input type="text" readonly className="form-control" id="cipherTextBottom" value={cipherText}></input>
+            </div>
+          </div>
+          <hr />
+          <div className="row justify-content-md-center">
             <p>
               Source: <a href="https://zerofruit.medium.com/what-is-aes-step-by-step-fcb2ba41bb20">https://zerofruit.medium.com/what-is-aes-step-by-step-fcb2ba41bb20</a>
             </p>
@@ -468,25 +547,27 @@ class AES extends Component {
       return (
         <div className="AES" align="center">
           <div>
-            <h1 class="aesH1">AES - Advanced Encryption Standard</h1>
+            <h1 className="aesH1">AES - Advanced Encryption Standard</h1>
           </div>
-          <div class="row justify-content-md-center">
-            <label for="plainText" class="col-form-label">Plain Text:</label>
-            <div class="col-sm-8"> 
-              <Input id="plainText" type="text" ref={i => this.input = i} />
+          <div className="row justify-content-md-center">
+            <label htmlFor="plainText" className="col-form-label">Plain Text:</label>
+            <div className="col-sm-4"> 
+              <Input id="plainText" maxLength="16" type="text" ref={i => this.input = i} defaultValue="" />
             </div>
-            <label for="keySize" class="col-form-label">Key Size:</label>
-            <div class="col-sm-1">
-              <Select
-                id="keySize"
-                placeholder="key"
-              >
-                <Option value="128">128</Option>
-                <Option value="192">192</Option>
-                <Option value="256">256</Option>
+            <label htmlFor="key" className="col-form-label">Key:</label>
+            <div className="col-sm-4"> 
+              <Input id="key" type="text" ref={k => this.key = k} defaultValue="" />
+            </div>
+            <div className="col-sm-1">
+              <Select id="keySize" defaultValue="128" onChange={(value)=>this.key_size = value}>
+                <Option value={128}>128</Option>
+                <Option value={192} disabled>192</Option>
+                <Option value={256} disabled>256</Option>
               </Select>
             </div>
-            <Button onClick={this.run}>Encrypt</Button>
+            <div className="col-sm-2">
+              <Button onClick={this.run}>Encrypt</Button>
+            </div>
           </div>
         </div>
       )
