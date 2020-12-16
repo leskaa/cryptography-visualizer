@@ -37,8 +37,7 @@ class AES extends Component {
     this.key_size = 128;
     this.handleChange = this.handleChange.bind(this);
     // this.handleClick = this.handleClick.bind(this);
-    /* I've been having one hell of a time getting the syntax on this working...
-       this prettier/prettier dependency thing is a complete peice of shit. 
+    /* 
        Anyway found this here: https://www.movable-type.co.uk/scripts/aes.html */
     // prettier-ignore
     this.sBox = [
@@ -315,10 +314,6 @@ class AES extends Component {
     let page = this.state.page;
     let initialMatrix = this.initialMatrix;
     let roundKeyMatrix1 = this.roundKeyMatrix1;
-    /* This is the absolute stupidest shit I've ever had to do.
-       For some reason react was not updating the components if
-       I assigned a new value to the same variable. Like the
-       variable would update, but not the component itself.  */
     let substituteBytesMatrix0 = this.substituteBytesMatrix[0];
     let substituteBytesMatrix1 = this.substituteBytesMatrix[1];
     let substituteBytesMatrix2 = this.substituteBytesMatrix[2];
