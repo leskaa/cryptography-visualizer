@@ -4,7 +4,7 @@ import { Typography } from 'antd';
 const { Title } = Typography;
 
 const RSA = () => {
-  return <Title>RSA</Title>;
+  return <Title>Rivest–Shamir–Adleman</Title>;
 };
 
 export default RSA;

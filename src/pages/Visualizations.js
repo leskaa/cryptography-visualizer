@@ -26,11 +26,11 @@ export const Visualizations = () => {
             onChange={handleChange}
           >
             <OptGroup label="Symmetric">
-              <Option value="AES">Advanced Encryption Standard</Option>
+              <Option value="AES">AES</Option>
             </OptGroup>
             <OptGroup label="Asymmetric">
-              <Option value="RSA">Rivest–Shamir–Adleman</Option>
-              <Option value="ECC">Elliptic-Curve Cryptography</Option>
+              <Option value="RSA">RSA</Option>
+              <Option value="ECC">ECC</Option>
             </OptGroup>
           </Select>
         ]}
