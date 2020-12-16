@@ -14,25 +14,23 @@ class AES extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      key_128: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
-      key_length: 128,
       rounds: 10,
       page: 0,
       cipherText: ' ',
       view: false
     };
     //todo: make all these arrays so the user can page through each round.
-    this.initialMatrix = <p>todo</p>;
-    this.roundKeyMatrix1 = <p>todo</p>;
+    this.initialMatrix = <p></p>;
+    this.roundKeyMatrix1 = <p></p>;
     this.substituteBytesMatrix = [];
     this.shiftRowsMatrix = [];
     this.mixColumnsMatrix = [];
     this.roundKeyMatrix2 = [];
     for (let x = 0; x < this.state.rounds; x++) {
-      this.substituteBytesMatrix[x] = <p>todo</p>;
-      this.shiftRowsMatrix[x] = <p>todo</p>;
-      this.mixColumnsMatrix[x] = <p>todo</p>;
-      this.roundKeyMatrix2[x] = <p>todo</p>;
+      this.substituteBytesMatrix[x] = <p></p>;
+      this.shiftRowsMatrix[x] = <p></p>;
+      this.mixColumnsMatrix[x] = <p></p>;
+      this.roundKeyMatrix2[x] = <p></p>;
     }
     this.input = React.createRef();
     this.key = React.createRef();
@@ -68,18 +66,22 @@ class AES extends Component {
   encrypt(input, key, key_size) {
     console.log('The user inputed the following text to encrpt: ' + input);
 
+    if (!Number.isInteger(key_size)) {
+      key_size = 128;
+    }
     var n = key_size / 8;
 
     // this outer for loop is for future implementations with no length limit on plain text
     for (var i = 0; i < input.length; i += n) {
       var textBytes = [];
       var keyBytes = [];
+      var cipherText = '';
       for (var j = 0; j < n; j++) {
-        textBytes.push(j < input.length ? input.charCodeAt(i + j) : 0);
-        keyBytes.push(i < key.length ? key.charCodeAt(i + j) : 0);
+        textBytes.push(j < input.length ? input.charCodeAt(i + j) : 20);
+        keyBytes.push(i < key.length ? key.charCodeAt(i + j) : 20);
       }
 
-      // var key = this.keyExpansion(textBytes);
+      var key = this.keyExpansion(keyBytes);
       var aesMatrix = this.createMatrix(textBytes);
       this.initialMatrix = this.displayMatrix(aesMatrix);
 
@@ -111,10 +113,14 @@ class AES extends Component {
       // prettier-ignore
       this.shiftRowsMatrix[this.state.rounds - 1] = this.displayMatrix(aesMatrix);
       // prettier-ignore
-      this.mixColumnsMatrix[this.state.rounds - 1] = <p>todo: Mix Columns is not performed on the last Loop.</p>
-      var cipherText = '';
+      this.mixColumnsMatrix[this.state.rounds - 1] = <p>Mix Columns is not performed on the last Loop.</p>
+      aesMatrix = this.addRoundKey(aesMatrix, key, 0);
+      //prettier-ignore
+      this.roundKeyMatrix2[this.state.rounds - 1] = this.displayMatrix(aesMatrix);
+
       for (let i = 0; i < 4; i++) {
         for (let j = 0; j < 4; j++) {
+          // prettier-ignore
           cipherText = cipherText + String.fromCharCode(aesMatrix[i][j]);
         }
       }
@@ -255,8 +261,6 @@ class AES extends Component {
       rounds = 14;
     }
     this.setState({
-      key_128: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
-      key_length: value,
       rounds: rounds,
       page: this.state.page,
       inpur: this.state.input,
@@ -269,8 +273,6 @@ class AES extends Component {
     // prettier-ignore
     var cipherText = this.encrypt(this.input.state.value, this.key.state.value, this.key_size);
     this.setState({
-      key_128: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
-      key_length: this.state.key_length,
       rounds: this.state.rounds,
       page: this.state.page,
       input: this.input.state.value,
