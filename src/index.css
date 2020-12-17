@@ -11,3 +11,28 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+.card{
+  margin: 1rem;
+  padding: 1rem;
+}
+
+.btn {
+  margin: 0 1rem 0 1rem;
+}
+
+.row{
+  margin: 3rem;
+}
+
+.matrix {
+  width: 50%;
+}
+
+h1,
+h2,
+ul,
+p{
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
