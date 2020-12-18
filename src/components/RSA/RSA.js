@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { Typography, Input, Button, Row, Col, Radio, Select } from 'antd';
+import { Typography, Input, Button, Row, Col, Radio, Select, Slider } from 'antd';
 import { generateKey, toPem, encrypt, decrypt, exportPrivateKey,
         exportPublicKey, arrayBufferToBase64, base64ToArrayBuffer } from './RSA-include/rsa_keygen';
 
@@ -17,7 +17,9 @@ class RSA extends Component {
       inputText: null,
       outputText: null,
       keys: [],
-      readableKeys: []
+      readableKeys: [],
+      sliderValue: 50,
+      keyMaxMsgSize: []
     }
 
     this.encryptInput = this.encryptInput.bind(this);
@@ -27,34 +29,36 @@ class RSA extends Component {
     this.onChangeInput = this.onChangeInput.bind(this);
     this.checkInputs = this.checkInputs.bind(this); 
     this.generateKeyPair = this.generateKeyPair.bind(this);
+    this.onChangeSlider = this.onChangeSlider.bind(this);
+    this.sliderValConverter = this.sliderValConverter.bind(this);
+    this.getMaxMsgSize = this.getMaxMsgSize.bind(this);
   }
 
   render() {
+    const marks = {
+      0: '1024 bits',
+      50: '2048 bits',
+      100: '4096 bits'
+    };
+
     return (
       <>
         <Title>Rivest–Shamir–Adleman</Title>
-        <Row gutter={[0, 24]}>
-          <Col className="gutter-row" span={12}>
+        <Row justify="center" gutter={[0, 24]}>
+          <Col className="gutter-row" span={8}>
             <Title level={4}>RSA Key</Title>
-            <select onChange={this.onChangeKey}>
+            <Select onChange={this.onChangeKey} value={this.state.key} style={{width: "100%"}}>
               {this.state.keys.map((keyPair, i) => {
                 return (
-                  <option value={i}>Client {i}</option>
+                  <Option value={i}>RSA Key Pair #{i + 1}</Option>
                 )
               })}
-            </select>
-          </Col>
-          <Col className="gutter-row" span={12}>
-            <Title level={4}>Key Type</Title>
-            <Radio.Group onChange={this.onChangeKeyType}>
-              <Radio value="1">Private</Radio>
-              <Radio value="2">Public</Radio>
-            </Radio.Group>
+            </Select>
           </Col>
         </Row>
         <Row  gutter={[24, 24]}>
           <Col className="gutter-row" span={12}>
-            <Title level={2}>Text to be converted</Title>
+            <Title level={2}>Text to be converted - Max Length: {this.state.keyMaxMsgSize[this.state.key]} chars</Title>
             <TextArea onChange={this.onChangeInput} defaultValue="" value={this.state.inputText} placeholder="Please paste the text to be converted here..." autoSize></TextArea>
           </Col>
           <Col className="gutter-row" span={12}>
@@ -72,7 +76,16 @@ class RSA extends Component {
         </Row>
         <Row gutter={[24, 24]}>
           <Col style={{textAlign: "center"}} className="gutter-row" span={24}>
-            <Button onClick={this.generateKeyPair}>Generate Key Pair</Button>
+            <Row justify="center">
+              <Col>
+                <Button onClick={this.generateKeyPair}>Generate Key Pair</Button>
+              </Col>
+            </Row>
+            <Row justify="center">
+              <Col span={8}>
+                <Slider onChange={this.onChangeSlider} defaultValue={50} marks={marks} step={null} min={0} max={100} tooltipVisible={false}></Slider>
+              </Col>
+            </Row>
             <Title level={4}>Generated Key Pairs</Title>
             {this.state.readableKeys.map((keyPair, i) => {
               return (
@@ -88,8 +101,13 @@ class RSA extends Component {
     );
   }
 
-  onChangeKey(e) {
-    this.setState({ key: e.target.value });
+  onChangeSlider(value) {
+    this.setState({sliderValue: value});
+  }
+
+  onChangeKey(value) {
+    //this.setState({ key: e.target.value });
+    this.setState({ key: value });
   }
 
   onChangeKeyType(e) {
@@ -106,8 +124,44 @@ class RSA extends Component {
     }else{ return false; }
   }
 
+  sliderValConverter(val) {
+    let realVal;
+    switch (val) {
+      case 0: //256
+        realVal = 1024;
+        break;
+      case 50: //2048
+        realVal = 2048;
+        break;
+      case 100: //4096
+        realVal = 4096;
+        break;
+      default:
+        break;
+    }
+    return realVal;
+  }
+
+  getMaxMsgSize(val) {
+    let realVal;
+    switch (val) {
+      case 1024: //256
+        realVal = 62;
+        break;
+      case 2048: //2048
+        realVal = 190;
+        break;
+      case 4096: //4096
+        realVal = 446;
+        break;
+      default:
+        break;
+    }
+    return realVal;
+  }
+
   async generateKeyPair() {
-    generateKey(2048).then((keyPair) => {
+    generateKey(this.sliderValConverter(this.state.sliderValue)).then((keyPair) => {
       exportPrivateKey(keyPair.privateKey).then((exported) => {
         let privTemp = toPem(exported, 'PRIVATE');
         exportPublicKey(keyPair.publicKey).then((exported) => {
@@ -117,6 +171,7 @@ class RSA extends Component {
           }
           this.setState({
             keys: [...this.state.keys, keyPair],
+            keyMaxMsgSize: [...this.state.keyMaxMsgSize, this.getMaxMsgSize(this.sliderValConverter(this.state.sliderValue))],
             readableKeys: [
               ...this.state.readableKeys,
               {
@@ -131,9 +186,7 @@ class RSA extends Component {
   }
 
   encryptInput() {
-    alert(`Encrypt Begin`);
-    if(!this.checkInputs()) return;
-    alert(`Encrypt: ${this.state.key}`);
+    if(!this.checkInputs() || this.state.inputText.length > this.state.keyMaxMsgSize[this.state.key]) return;
     encrypt(this.state.inputText, this.state.keys[this.state.key].publicKey)
       .then((ciphertext) => {
         this.setState({ outputText: arrayBufferToBase64(ciphertext) });
