@@ -39,7 +39,7 @@ class RSA extends Component {
             <select onChange={this.onChangeKey}>
               {this.state.keys.map((keyPair, i) => {
                 return (
-                  <option value={keyPair}>Client {i}</option>
+                  <option value={i}>Client {i}</option>
                 )
               })}
             </select>
@@ -47,8 +47,8 @@ class RSA extends Component {
           <Col className="gutter-row" span={12}>
             <Title level={4}>Key Type</Title>
             <Radio.Group onChange={this.onChangeKeyType}>
-              <Radio value={1}>Private</Radio>
-              <Radio value={2}>Public</Radio>
+              <Radio value="1">Private</Radio>
+              <Radio value="2">Public</Radio>
             </Radio.Group>
           </Col>
         </Row>
@@ -88,9 +88,8 @@ class RSA extends Component {
     );
   }
 
-  onChangeKey(value) {
-    alert("changekey");
-    this.setState({ key: value });
+  onChangeKey(e) {
+    this.setState({ key: e.target.value });
   }
 
   onChangeKeyType(e) {
@@ -102,7 +101,7 @@ class RSA extends Component {
   }
 
   checkInputs() {
-    if(this.state && this.state.key && this.state.keyType && this.state.inputText){
+    if(this.state != null && this.state.key != null && this.state.inputText != null){
       return true;
     }else{ return false; }
   }
@@ -114,7 +113,7 @@ class RSA extends Component {
         exportPublicKey(keyPair.publicKey).then((exported) => {
           let pubTemp = toPem(exported, 'PUBLIC');
           if(!this.state.key) {
-            this.setState({key: keyPair});
+            this.setState({key: 0});
           }
           this.setState({
             keys: [...this.state.keys, keyPair],
@@ -132,33 +131,26 @@ class RSA extends Component {
   }
 
   encryptInput() {
+    alert(`Encrypt Begin`);
     if(!this.checkInputs()) return;
-    let encrypted;
-    if(this.state.keyType === 1) {
-      encrypted = encrypt(this.state.inputText, this.state.key.privateKey);
-    }else if(this.state.keyType === 2) {
-      encrypted = encrypt(this.state.inputText, this.state.key.publicKey);
-    }
-    encrypted.then((ciphertext) => {
+    alert(`Encrypt: ${this.state.key}`);
+    encrypt(this.state.inputText, this.state.keys[this.state.key].publicKey)
+      .then((ciphertext) => {
         this.setState({ outputText: arrayBufferToBase64(ciphertext) });
       }).catch((err) => {
-        alert("Encrypt: "+err)
+        alert("Encrypt Error: "+err)
       });
   }
 
-  async decryptInput() {
+  decryptInput() {
     if(!this.checkInputs()) return;
-    let decrypted;
-    if(this.state.keyType === 1) {
-      decrypted = decrypt(base64ToArrayBuffer(this.state.inputText), this.state.key.privateKey);
-    }else if(this.state.keyType === 2) {
-      decrypted = decrypt(base64ToArrayBuffer(this.state.inputText), this.state.key.publicKey);
-    }
-    let plaintext = await decrypted
+    decrypt(base64ToArrayBuffer(this.state.inputText), this.state.keys[this.state.key].privateKey)
+      .then((plaintext) => {
+        this.setState({ outputText: plaintext });
+      })
       .catch((err) => {
         alert("decrypt: "+err)
       });
-    this.setState({ outputText: plaintext });
   }
 }
 
