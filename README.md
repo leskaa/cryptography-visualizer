@@ -68,3 +68,11 @@ This section has moved here: [https://facebook.github.io/create-react-app/docs/d
 ### `yarn build` fails to minify
 
 This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+
+# How to use RSA Example
+
+## Generate Keys
+
+### Private Key: `openssl genrsa -out rsa_1024_priv.pem 1024`
+
+### Public Key: `openssl rsa -pubout -in rsa_1024_priv.pem -out rsa_1024_pub.pem`

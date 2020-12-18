@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { PageHeader, Select } from 'antd';
 import AES from '../components/AES';
-import RSA from '../components/RSA';
+import RSA from '../components/RSA/RSA';
 import ECC from '../components/ECC';
 
 const { Option, OptGroup } = Select;
